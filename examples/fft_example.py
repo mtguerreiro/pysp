@@ -12,7 +12,7 @@ fs = 10e3
 
 # Number of points
 #N = 3*int(fs/f)
-N = 2**17
+N = 2**16
 
 # --- Signal ---
 t = (1/fs)*np.arange(N)

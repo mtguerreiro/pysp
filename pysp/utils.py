@@ -26,6 +26,26 @@ def samples_bit_reversal_old(N):
     return [int(format(xi, fmt)[:1:-1], 2) for xi in np.arange(N)]
 
 
+def butterfly_idx(nb, mb):
+
+    alp = [np.arange(nb) + 2*nb*k for k in range(int(mb))]
+    bet = [np.arange(nb) + 2*nb*k + nb for k in range(int(mb))]
+
+    return alp, bet
+
+
+def butterfly_idx2(nb, mb):
+    
+    alp = []
+    bet = []
+    for k in range(mb):
+        x = np.arange(nb) + 2*nb*k 
+        alp.append(x.tolist())
+        bet.append((x + nb).tolist())
+
+    return alp, bet
+    
+
 def butterfly(x, y, beta):
 
     return x+beta*y, x-beta*y

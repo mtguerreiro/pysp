@@ -1,6 +1,5 @@
 import numpy as np
 import pysp.utils as sputils
-import time
 
 def dft_naive(x):
     r"""Computes the naive DFT of a sequence.
@@ -107,10 +106,11 @@ def fft(x):
         # Number of elements in each block
         nb = 2**m
         # Number of blocks
-        mb = N/2**(m+1)
+        mb = int(N/2**(m+1))
 
-        alp = np.array([np.arange(nb) + 2*nb*k for k in range(int(mb))]).flatten()
-        bet = np.array([np.arange(nb) + 2*nb*k + nb for k in range(int(mb))]).flatten()
+        alp, bet = sputils.butterfly_idx(nb, mb)
+        alp = np.array(alp).flatten()
+        bet = np.array(bet).flatten()
 
         _k = 2**(n - m - 1)*np.arange(N)
         Wnk = np.exp(-1j*2*np.pi*_k/N)
@@ -119,4 +119,4 @@ def fft(x):
         X[alp] = a[0]
         X[bet] = a[1]
 
-    return X    
+    return X
