@@ -1,5 +1,6 @@
 import numpy as np
 import pysp.utils as sputils
+import time
 
 def dft_naive(x):
     r"""Computes the naive DFT of a sequence.
@@ -96,8 +97,8 @@ def fft(x):
     n = int(np.log10(N)/np.log10(2))
 
     # FFT indexes
-    idx = sputils.samples_bit_reversal(k)
-
+    idx = sputils.samples_bit_reversal(np.arange(N))
+    
     # Rearanges samples
     X = np.zeros(x.shape, complex)
     X[:] = x[idx]
