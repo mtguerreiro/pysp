@@ -1,4 +1,5 @@
 import numpy as np
+import pysp.utils as sputils
 
 def dft_naive(x):
     r"""Computes the naive DFT of a sequence.
@@ -63,7 +64,6 @@ def idft_naive(X):
         Inverse DFT of the input signal.
         
     """
-    
     N = X.shape[0]
 
     n = np.arange(N).reshape(-1, 1)
@@ -75,3 +75,47 @@ def idft_naive(X):
     x = (cos + 1j*sin) @ X
 
     return x/N
+
+
+def fft(x):
+    r"""Computes the DFT of a sequence using the FFT algorithm.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Input sequence.
+
+    Returns
+    -------
+    np.ndarray:
+        Fourier coefficients of the input signal.
+        
+    """
+    # Signal length and number of stages
+    N = int(x.shape[0])
+    n = int(np.log10(N)/np.log10(2))
+
+    # FFT indexes
+    idx = sputils.samples_bit_reversal(k)
+
+    # Rearanges samples
+    X = np.zeros(x.shape, complex)
+    X[:] = x[idx]
+
+    for m in range(n):
+        # Number of elements in each block
+        nb = 2**m
+        # Number of blocks
+        mb = N/2**(m+1)
+
+        alp = np.array([np.arange(nb) + 2*nb*k for k in range(int(mb))]).flatten()
+        bet = np.array([np.arange(nb) + 2*nb*k + nb for k in range(int(mb))]).flatten()
+
+        _k = 2**(n - m - 1)*np.arange(N)
+        Wnk = np.exp(-1j*2*np.pi*_k/N)
+
+        a = sputils.butterfly(X[alp], X[bet], Wnk[alp])
+        X[alp] = a[0]
+        X[bet] = a[1]
+
+    return X    
