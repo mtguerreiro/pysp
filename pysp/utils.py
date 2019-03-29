@@ -1,5 +1,6 @@
 import numpy as np
-
+import csv
+import re
 
 def samples_bit_reversal(x):
 
@@ -49,3 +50,38 @@ def butterfly_idx2(nb, mb):
 def butterfly(x, y, beta):
 
     return x+beta*y, x-beta*y
+
+
+def ltspice_read_txt(file):
+
+    with open(file) as csvfile:
+        csvdata = list(csv.reader(csvfile, delimiter='\t'))
+        traces = csvdata[0]
+        traces_data = np.array([[float(dk) for dk in d] for d in csvdata[1:]])
+
+    data = {}
+    for k, trace in enumerate(traces):
+        data[trace] = traces_data[:, k]
+
+    return data
+
+
+def ltspice_read_bode(file):
+
+    with open(files[0], 'r') as csvfile:
+        csvdata = list(csv.reader(csvfile, delimiter='\t'))
+
+    traces = csvdata[0]
+    freq = []
+    mag_phase = []
+    for k, d in enumerate(csvdata[1:]):
+        freq.append(float(d[0]))
+        mp = re.findall('(-*\d.\d*e[+-]\d*)', d[1])
+        mag_phase.append([float(mi) for mi in mp]) 
+
+    data = {}
+    data['freq'] = np.array(freq)
+    data['mag'] = np.array(mag_phase)[:, 0]
+    data['phase'] = np.array(mag_phase)[:, 1]
+
+    return data
