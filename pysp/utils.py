@@ -68,7 +68,7 @@ def ltspice_read_txt(file):
 
 def ltspice_read_bode(file):
 
-    with open(files[0], 'r') as csvfile:
+    with open(file, 'r') as csvfile:
         csvdata = list(csv.reader(csvfile, delimiter='\t'))
 
     traces = csvdata[0]
