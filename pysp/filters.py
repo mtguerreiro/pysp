@@ -24,6 +24,7 @@ def butter(wp, Hwp, ws, Hws, cutoff='wp', show_partial=False):
     """
     A = lambda Hw : 1/Hw**2 - 1
 
+    # --- Corner frequency and order ---
     # Corner frequency
     log_wc = np.log10(A(Hwp))*np.log10(ws) - np.log10(A(Hws))*np.log10(wp)
     log_wc = log_wc/(np.log10(A(Hwp)/A(Hws)))
@@ -42,5 +43,18 @@ def butter(wp, Hwp, ws, Hws, cutoff='wp', show_partial=False):
     if show_partial is True:
         print('Order: ', _N)
         print('Cut-off: ', _wc)
-        
-    return wc, N
+
+    # --- Poles ----
+    k = np.arange(2*N)
+    sk = wc*np.exp((1j*np.pi/2/N)*(2*k + N - 1))
+
+    if show_partial is True:
+        print('Poles:')
+        print(sk)
+
+    butter_filter = {}
+    butter_filter['wc'] = wc
+    butter_filter['N'] = N
+    butter_filter['poles'] = sk
+    
+    return butter_filter
