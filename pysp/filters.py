@@ -183,8 +183,8 @@ def butter_tf(poles):
         if np.abs(np.imag(pk[k])) > 1e-10:
             # Forms 2nd order partial transfer function by combining one
             # complex pole with its conjugate
-            den_1 = np.poly(-pk[k])
-            den_2 = np.poly(-pk[k+1])
+            den_1 = np.poly(pk[k])
+            den_2 = np.poly(pk[k+1])
             den = np.polymul(den_1, den_2)
             num = Ak[k]*den_2 + Ak[k+1]*den_1
 
@@ -194,7 +194,7 @@ def butter_tf(poles):
             # Skips next pole since we took one and its conjugate
             k+=1
         else:
-            den_list.append(np.poly(-pk[k]).real)
+            den_list.append(np.poly(pk[k]).real)
             num_list.append(np.poly(Ak[k]).real)
             
         k+=1
@@ -253,3 +253,29 @@ def butter_tf_discrete(poles, T):
         k+=1
 
     return np.array(num_list), np.array(den_list)
+
+
+def bode(num, den, wstart, wstop, dw=1):
+
+    w = np.arange(wstart, wstop, dw)
+    s = 1j*w.reshape(-1, 1)
+
+    d = np.polyval(den.T, s)
+    n = np.polyval(num.T, s)    
+
+    Gw = np.abs(np.prod(n, 1)/np.prod(d, 1))
+
+    return w, Gw
+
+
+def bode_discrete(num, den, wstart, wstop, dw=1, T=1):
+
+    w = np.arange(wstart, wstop, dw)
+    z = np.exp(-1j*T*w.reshape(-1, 1))
+
+    d = np.polyval(den.T, z)
+    n = np.polyval(num.T, z)    
+
+    Gw = np.abs(np.prod(n, 1)/np.prod(d, 1))
+
+    return w, Gw
