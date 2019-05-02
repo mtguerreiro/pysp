@@ -103,11 +103,29 @@ def tf_to_sos_z(num, den, T):
 
 
 def sos_to_tf(num, den):
+    """Builds a transfer function from the SOS representation.
 
-    _num = np.array([1.])
-    _den = np.array([1.])
+    Parameters
+    ----------
+    num : np.ndarray
+        Array with denominator coefficients for each section.
 
-    for n in range(num.shape[0]):
+    den : np.ndarray
+        Array with numerator coefficients for each section.
+
+    Returns
+    -------
+    num : np.ndarray
+        Array with numerator for the transfer function.
+
+    den : np.ndarray
+        Array with denominator for the transfer function.
+    
+    """
+    _num = np.array(num[0])
+    _den = np.array(den[0])
+
+    for n in range(1, num.shape[0]):
         _num = np.polyadd(np.polymul(num[n], _den), np.polymul(_num, den[n]))
         _den = np.polymul(den[n], _den)
 
