@@ -202,7 +202,8 @@ class butter:
         """Computes the numerator and denominator of the filter's discrete
         transfer function, based on the continuos-time transfer function.
 
-        returns:
+        Returns
+        -------
         num : np.ndarray
             Array with denominator coefficients.
 
@@ -210,10 +211,9 @@ class butter:
             Array with numerator coefficients.
             
         """
-        sosz = futils.tf_to_sos_z(self.tf[0], self.tf[1], self.T)
-        
+        sosz = futils.tf_to_sos_z(self.tf[0], self.tf[1], self.T)        
         return futils.sos_to_tf(sosz[0], sosz[1])
-
+    
 
     def __sos(self):
         """Gets SOS representation from the filter's transfer function.
@@ -243,7 +243,7 @@ class butter:
             
         """
         T = T if T is not None else self.T
-        
+
         return futils.tf_to_sos_z(self.tf[0], self.tf[1], T)
 
 
@@ -353,3 +353,38 @@ class butter:
         ejw = np.exp(-1j*w*T)
         
         return np.polyval(self.tfz[0], ejw)/np.polyval(self.tfz[1], ejw)
+
+
+##    def filterz(self, x):
+##        """Filters the signal :math:`x`.
+##
+##        Parameters
+##        ----------
+##        x : np.ndarray
+##            Filter's input, as a 1-D array.
+##
+##        Returns
+##        y : np.ndarray
+##            Filter's output, as a 1-D array
+##            
+##        """
+##        N = x.shape[0]
+##        M = self.order
+##
+##        num = self.tfz[0][::-1]
+##        den = self.tfz[1][1:][::-1]
+##
+##        Nn = num.shape[0]
+##        Nd = den.shape[0]
+##        
+##        y = np.zeros(x.shape)
+##
+##        for n in range(0, M):
+##            yi = np.where((n - np.arange(Nn)) >= 0)[0]
+##            xi = np.where((n - np.arange(Nd)) >= 0)[0]
+##            y[n] = -y[yi] @ den[yi] + x[xi] @ num[xi]
+##            
+##        for n in range(M, N):
+##            y[n] = -y[(n - Nn):n] @ den + x[(n - Nd):n] @ num
+##
+##        return y
