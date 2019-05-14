@@ -231,7 +231,7 @@ class butter:
             k = 0
             while k < numz.shape[0] - 1:
                 if np.abs(np.imag(zk[k])) > 1e-10:
-                    numk = np.polymul([1, zk[k]], [1, zk[k+1]])
+                    numk = np.polymul([1, -zk[k]], [1, -zk[k+1]])
                     num_list.append(numk.real)
                     k += 1
                 else:
@@ -240,7 +240,7 @@ class butter:
             k = 0
             while k < denz.shape[0] - 1:
                 if np.abs(np.imag(pk[k])) > 1e-10:
-                    denk = np.polymul([1, pk[k]], [1, pk[k+1]])
+                    denk = np.polymul([1, -pk[k]], [1, -pk[k+1]])
                     den_list.append(denk.real)
                     k += 1
                 else:
@@ -249,6 +249,7 @@ class butter:
 
             self.tfz_sos = [0., 0.]
             self.tfz_sos[0] = np.array(num_list)
+            self.tfz_sos[0][0] = numz[0]*self.tfz_sos[0][0]
             self.tfz_sos[1] = np.array(den_list)
             
 
@@ -525,10 +526,17 @@ class butter:
             Filter's output.
             
         """
-        y = np.zeros(x.shape)
-        for num, den in zip(self.tfz_sos[0], self.tfz_sos[1]):
-            y += futils.sos_filter((num, den), x)
-
+        if self.method == 'impulse':
+            y = np.zeros(x.shape)
+            for num, den in zip(self.tfz_sos[0], self.tfz_sos[1]):
+                y += futils.sos_filter((num, den), x)
+                
+        elif self.method == 'bilinear':
+            y = np.copy(x)
+            for num, den in zip(self.tfz_sos[0], self.tfz_sos[1]):
+                y = futils.sos_filter((num, den), y)
+            #y = futils.sos_filter((self.tfz_sos[0][1], self.tfz_sos[1][1]), x)
+                
         return y
     
 
