@@ -62,42 +62,48 @@ class butter:
         Sampling period for discrete filters.
         
     """
-    def __init__(self, wp, Hwp, ws, Hws, cutoff='wp', T=1, show_partial=False):
-        self._A = lambda H_w : 1/H_w**2 - 1
+    def __init__(self, wp, Hwp, ws, Hws, cutoff='wp', T=1, show_partial=False,
+                 method='impulse'):
 
-        # Sampling time for discrete stuff
-        self.T = T
-
-        # Corner frequency
-        _wc = self.__corner(wp, Hwp, ws, Hws)
-        # Order
-        _N = self.__order(_wc, wp, Hwp)
-        
-        # Actual order, cut-off
-        N = np.ceil(_N).astype(int)
-        if cutoff == 'wp':
-            wc = wp/(self._A(Hwp)**(1/2/N))
-        else:
-            wc = ws/(self._A(Hws)**(1/2/N))
-        self.order = N
-        self.wc = wc
-        self.fc = wc/2/np.pi
-
-        sk = self.__poles()
-        sk = sk[sk.real < 0]
-        self.poles = sk
-
-        tf = [0., 0.]
-        tf[0], tf[1] = self.__tf()
-        self.tf = tf
-        self.tf_sos = self.__sos()
-
-        tfz = [0., 0.]
-        tfz[0], tfz[1] = self.__tfz()
-        self.tfz = tfz
-        self.tfz_sos = self.__sosz()
+        if method == 'impulse':
+            self.__impulse(wp, Hwp, ws, Hws, cutoff, T, show_partial)
         
 
+    def __impulse(self, wp, Hwp, ws, Hws, cutoff='wp', T=1, show_partial=False):
+            self._A = lambda H_w : 1/H_w**2 - 1
+
+            # Sampling time for discrete stuff
+            self.T = T
+
+            # Corner frequency
+            _wc = self.__corner(wp, Hwp, ws, Hws)
+            # Order
+            _N = self.__order(_wc, wp, Hwp)
+            
+            # Actual order, cut-off
+            N = np.ceil(_N).astype(int)
+            if cutoff == 'wp':
+                wc = wp/(self._A(Hwp)**(1/2/N))
+            else:
+                wc = ws/(self._A(Hws)**(1/2/N))
+            self.order = N
+            self.wc = wc
+            self.fc = wc/2/np.pi
+
+            sk = self.__poles()
+            sk = sk[sk.real < 0]
+            self.poles = sk
+
+            tf = [0., 0.]
+            tf[0], tf[1] = self.__tf()
+            self.tf = tf
+            self.tf_sos = self.__sos()
+
+            tfz = [0., 0.]
+            tfz[0], tfz[1] = self.__tfz()
+            self.tfz = tfz
+            self.tfz_sos = self.__sosz()
+        
     def __corner(self, wp, Hwp, ws, Hws):
         r"""Computes the corner frequency necessary for a Butterworth low-pass
         filter with the given specifications.
