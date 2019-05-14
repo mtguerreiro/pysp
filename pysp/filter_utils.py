@@ -130,4 +130,45 @@ def sos_to_tf(num, den):
         _den = np.polymul(den[n], _den)
 
     return _num, _den
+
+
+def sos_filter(sos, x):
+    """Filters a signal considering a single SOS section
+
+    Parameters
+    ----------
+    sos : tuple, list, np.ndarray
+        Numerator and denominator of the section's transfer function.
+
+    x : np.ndarray
+        1-D vector with filter's input.
+
+    Returns
+    -------
+    y : np.ndarray
+        Filter's output
+        
+    """
+    N = x.shape[0]
+    num = sos[0]
+    den = sos[1]
+
+    if num.shape[0] != 3:
+        n = num.shape[0]
+        num = np.hstack((num, np.zeros(3 - n)))
+    if den.shape[0] != 3:
+        n = den.shape[0]
+        den = np.hstack((den, np.zeros(3 - n)))
+
+    den = den[::-1]
+    num = num[::-1]
+
+    y = np.zeros(x.shape)
+    y[0] = num[0]*x[0]
+    y[1] = -den[1]*y[0] + num[-1]*x[1] + num[-2]*x[0]
+
+    for n in range(2, N):
+        y[n] = y[(n - 2):n] @ -den[:-1] + x[(n - 2):(n + 1)] @ num
+
+    return y
     

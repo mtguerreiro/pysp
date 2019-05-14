@@ -350,10 +350,31 @@ class butter:
             frequencies.
             
         """
+        T = self.T
         ejw = np.exp(-1j*w*T)
         
         return np.polyval(self.tfz[0], ejw)/np.polyval(self.tfz[1], ejw)
 
+
+    def filter(self, x):
+        """Filters the signal :math:`x`.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            1-D vector with filter's input.
+
+        Returns
+        y : np.ndarray
+            Filter's output.
+            
+        """
+        y = np.zeros(x.shape)
+        for num, den in zip(self.tfz_sos[0], self.tfz_sos[1]):
+            y += futils.sos_filter((num, den), x)
+
+        return y
+    
 
 ##    def filterz(self, x):
 ##        """Filters the signal :math:`x`.
