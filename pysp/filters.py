@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.signal
 import pysp.filter_utils as futils
+import sympy
 
 
 class butter:
@@ -27,8 +28,8 @@ class butter:
     T : int, float
         Sampling time to design the discrete filter.
 
-    show_partial : bool
-        If True, prints mid-steps in design
+    method : str
+        Method used to design the digital filter.
 
     Attributes
     ----------
@@ -62,14 +63,40 @@ class butter:
         Sampling period for discrete filters.
         
     """
-    def __init__(self, wp, Hwp, ws, Hws, cutoff='wp', T=1, show_partial=False,
-                 method='impulse'):
+    def __init__(self, wp, Hwp, ws, Hws, cutoff='wp', T=1, method='impulse'):
 
-        if method == 'impulse':
-            self.__impulse(wp, Hwp, ws, Hws, cutoff, T, show_partial)
+        self.method = method
         
+        if method == 'impulse':
+            self.__impulse(wp, Hwp, ws, Hws, cutoff, T)
 
-    def __impulse(self, wp, Hwp, ws, Hws, cutoff='wp', T=1, show_partial=False):
+        elif method == 'bilinear':
+            self.__bilinear(wp, Hwp, ws, Hws, cutoff, T)
+
+
+    def __impulse(self, wp, Hwp, ws, Hws, cutoff='wp', T=1):
+            """Designs a Butterworth low-pass with the impulse method.
+
+            Parameters
+            ----------
+            wp : int, float
+                Pass-band frequency :math:`\omega_p`.
+                
+            Hwp : int, float
+                Magnitude of :math:`H(j\omega)` desided at the pass-band frequency
+                :math:`\omega_p`.
+
+            ws : int, float
+                Stop-band frequency :math:`\omega_s`.
+
+            Hws : int, float
+                Magnitude of :math:`H(j\omega)` desided at the stop-band frequency
+                :math:`\omega_p`.
+
+            T : int, float
+                Sampling time to design the discrete filter.
+                
+            """
             self._A = lambda H_w : 1/H_w**2 - 1
 
             # Sampling time for discrete stuff
@@ -103,7 +130,128 @@ class butter:
             tfz[0], tfz[1] = self.__tfz()
             self.tfz = tfz
             self.tfz_sos = self.__sosz()
-        
+
+            
+    def __bilinear(self, wp, Hwp, ws, Hws, cutoff='wp', T=1):
+            """Designs a Butterworth low-pass with the bilinear method.
+
+            Parameters
+            ----------
+            wp : int, float
+                Pass-band frequency :math:`\omega_p`.
+                
+            Hwp : int, float
+                Magnitude of :math:`H(j\omega)` desided at the pass-band frequency
+                :math:`\omega_p`.
+
+            ws : int, float
+                Stop-band frequency :math:`\omega_s`.
+
+            Hws : int, float
+                Magnitude of :math:`H(j\omega)` desided at the stop-band frequency
+                :math:`\omega_p`.
+
+            T : int, float
+                Sampling time to design the discrete filter.
+                
+            """
+            self._A = lambda H_w : 1/H_w**2 - 1
+
+            # Sampling time for discrete stuff
+            self.T = T
+
+            # Corner frequency
+            wpl = 2/T*np.tan(wp*T/2)
+            wsl = 2/T*np.tan(ws*T/2)
+            _wc = self.__corner(wpl, Hwp, wsl, Hws)
+            # Order
+            _N = self.__order(_wc, wpl, Hwp)
+            
+            # Actual order, cut-off
+            N = np.ceil(_N).astype(int)
+            if cutoff == 'wp':
+                wc = wpl/(self._A(Hwp)**(1/2/N))
+            else:
+                wc = wsl/(self._A(Hws)**(1/2/N))
+            self.order = N
+            self.wc = wc
+            self.fc = wc/2/np.pi
+
+            sk = self.__poles()
+            sk = sk[sk.real < 0]
+            self.poles = sk
+
+            tf = [0., 0.]
+            tf[0], tf[1] = self.__tf()
+            self.tf = tf
+            #self.tf_sos = self.__sos()
+
+            self.__bilinear_c_to_d()
+
+
+    def __bilinear_c_to_d(self):
+
+            T = self.T
+            
+            s, z = sympy.symbols('s z')
+            s = 2/T*(1 - 1/z)/(1 + 1/z)
+
+            num = self.tf[0]
+            den = self.tf[1]
+            num_poly = sympy.Poly(num[0], s)
+            den_poly = sympy.Poly(den, s)
+
+            gs = num_poly/den_poly
+            num_z, den_z = sympy.fraction(gs.factor())
+            num_z = sympy.Poly(num_z.expand(), z)
+            den_z = sympy.Poly(den_z.expand(), z)
+
+            num_z = num_z/den_z.coeffs()[0]
+            den_z = den_z/den_z.coeffs()[0]
+            num_z = sympy.Poly(num_z).all_coeffs()
+            den_z = sympy.Poly(den_z).all_coeffs()
+            
+            self.tfz = [0., 0.]
+            self.tfz[0] = np.array(num_z, np.float64)
+            self.tfz[1] = np.array(den_z, np.float64)
+
+            self.__bilinear_tfz_to_sos()
+
+
+    def __bilinear_tfz_to_sos(self):
+
+            numz = self.tfz[0]
+            denz = self.tfz[1]
+
+            zk = np.sort(np.roots(numz))
+            pk = np.sort(np.roots(denz))
+
+            den_list = []
+            num_list = []
+            k = 0
+            while k < numz.shape[0] - 1:
+                if np.abs(np.imag(zk[k])) > 1e-10:
+                    numk = np.polymul([1, zk[k]], [1, zk[k+1]])
+                    num_list.append(numk.real)
+                    k += 1
+                else:
+                    num_list.append(np.poly(zk[k]).real)
+                k += 1
+            k = 0
+            while k < denz.shape[0] - 1:
+                if np.abs(np.imag(pk[k])) > 1e-10:
+                    denk = np.polymul([1, pk[k]], [1, pk[k+1]])
+                    den_list.append(denk.real)
+                    k += 1
+                else:
+                    den_list.append(np.poly(pk[k]).real)
+                k += 1
+
+            self.tfz_sos = [0., 0.]
+            self.tfz_sos[0] = np.array(num_list)
+            self.tfz_sos[1] = np.array(den_list)
+            
+
     def __corner(self, wp, Hwp, ws, Hws):
         r"""Computes the corner frequency necessary for a Butterworth low-pass
         filter with the given specifications.
@@ -224,7 +372,8 @@ class butter:
     def __sos(self):
         """Gets SOS representation from the filter's transfer function.
 
-        returns:
+        Returns
+        -------
         num : np.ndarray
             Array with denominator coefficients for each section.
 
@@ -371,6 +520,7 @@ class butter:
             1-D vector with filter's input.
 
         Returns
+        ----------
         y : np.ndarray
             Filter's output.
             
