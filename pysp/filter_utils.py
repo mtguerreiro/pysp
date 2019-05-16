@@ -171,4 +171,23 @@ def sos_filter(sos, x):
         y[n] = y[(n - 2):n] @ -den[:-1] + x[(n - 2):(n + 1)] @ num
 
     return y
+
+
+def filter_fir(fir, x):
+
+    num = fir[0][::-1]
+
+    N = x.shape[0]
+    M = num.shape[0] - 1
+
+    # Append initial zeros to compensate for initial conditions
+    xt = np.hstack((np.zeros(M), x))
+
+    y = np.zeros(xt.shape)
+
+    for n in range(M, N + M):
+        y[n] = xt[(n - M):(n + 1)] @ num
+
+    return y[M:]
+
     

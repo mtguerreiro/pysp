@@ -73,6 +73,9 @@ class butter:
         elif method == 'bilinear':
             self.__bilinear(wp, Hwp, ws, Hws, cutoff, T)
 
+        elif method == 'fir':
+            self.__fir(wp, Hwp, ws, Hws, T)
+
 
     def __impulse(self, wp, Hwp, ws, Hws, cutoff='wp', T=1):
             """Designs a Butterworth low-pass with the impulse method.
@@ -251,8 +254,48 @@ class butter:
             self.tfz_sos[0] = np.array(num_list)
             self.tfz_sos[0][0] = numz[0]*self.tfz_sos[0][0]
             self.tfz_sos[1] = np.array(den_list)
-            
 
+
+    def __fir(self, wp, Hwp, ws, Hws, T):
+        
+        self.T = T
+        dw = (ws - wp)*T
+        wc = (ws + wp)*T/2
+        delta = 1 - Hwp
+
+        A = -20*np.log10(delta)
+
+        if A < 21:
+            beta = 0
+
+        elif (A >= 21) and (A <= 50):
+            beta = 0.5842*(A - 21)**0.4 + 0.07886*(A - 21)
+
+        else:
+            beta = 0.1102*(A - 8.7)
+
+        M = (A - 8)/(2.285*dw)
+        M = np.ceil(M).astype(int)
+        
+        self.A = A
+        self.M = M
+        
+        alpha = M/2
+        n = np.arange(M + 1)
+        i0_arg = beta*(1 - ((n - alpha)/alpha)**2)**0.5
+        w = scipy.special.i0(i0_arg)/scipy.special.i0(beta)
+        self.w = w
+
+        hpb = wc/np.pi*np.sinc(wc*(n - alpha)/np.pi)
+        h = w*hpb
+        self.hpb = hpb
+        self.h = h
+
+        tfz = [0.0, 0.0]
+        tfz[0] = h
+        tfz[1] = np.array([1.])
+        self.tfz = tfz
+        
     def __corner(self, wp, Hwp, ws, Hws):
         r"""Computes the corner frequency necessary for a Butterworth low-pass
         filter with the given specifications.
@@ -535,8 +578,10 @@ class butter:
             y = np.copy(x)
             for num, den in zip(self.tfz_sos[0], self.tfz_sos[1]):
                 y = futils.sos_filter((num, den), y)
-            #y = futils.sos_filter((self.tfz_sos[0][1], self.tfz_sos[1][1]), x)
-                
+
+        elif self.method == 'fir':
+            y = futils.filter_fir(self.tfz, x)
+            
         return y
     
 
@@ -573,3 +618,6 @@ class butter:
 ##            y[n] = -y[(n - Nn):n] @ den + x[(n - Nd):n] @ num
 ##
 ##        return y
+
+
+        
