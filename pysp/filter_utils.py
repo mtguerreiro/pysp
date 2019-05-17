@@ -70,6 +70,7 @@ def tf_to_sos_z(num, den, T):
         
     """    
     Ak, pk, k = scipy.signal.residue(num, den)
+    print(Ak, pk)
     pk_sort = np.argsort(pk)
     Ak = Ak[pk_sort]
     pk = pk[pk_sort]
@@ -173,6 +174,48 @@ def sos_filter(sos, x):
     return y
 
 
+def sos_filter_rt(sos, x):
+    """Filters a signal considering a single SOS section
+
+    Parameters
+    ----------
+    sos : tuple, list, np.ndarray
+        Numerator and denominator of the section's transfer function.
+
+    x : np.ndarray
+        1-D vector with filter's input.
+
+    Returns
+    -------
+    y : np.ndarray
+        Filter's output
+        
+    """
+    N = x.shape[0]
+    num = sos[0]
+    den = sos[1]
+
+    if num.shape[0] != 3:
+        n = num.shape[0]
+        num = np.hstack((num, np.zeros(3 - n)))
+    if den.shape[0] != 3:
+        n = den.shape[0]
+        den = np.hstack((den, np.zeros(3 - n)))
+
+    y = np.zeros(x.shape)
+    
+    v = num[2]*x[0]
+    u = num[1]*x[0]
+    y[0] = num[0]*x[0]
+    
+    for n in range(1, N):
+        y[n] = num[0]*x[n] + u
+        u = num[1]*x[n] + -den[1]*y[n] + v
+        v = num[2]*x[n] + -den[2]*y[n]
+        
+    return y
+
+
 def filter_fir(fir, x):
 
     num = fir[0][::-1]
@@ -180,7 +223,7 @@ def filter_fir(fir, x):
     N = x.shape[0]
     M = num.shape[0] - 1
 
-    # Append initial zeros to compensate for initial conditions
+    # Append initial zeros to fix number of input samples
     xt = np.hstack((np.zeros(M), x))
 
     y = np.zeros(xt.shape)

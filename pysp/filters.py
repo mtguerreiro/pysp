@@ -109,6 +109,8 @@ class butter:
             _wc = self.__corner(wp, Hwp, ws, Hws)
             # Order
             _N = self.__order(_wc, wp, Hwp)
+
+            print(_N, _wc)
             
             # Actual order, cut-off
             N = np.ceil(_N).astype(int)
@@ -585,6 +587,27 @@ class butter:
         return y
     
 
+    def filter2(self, x):
+        """Filters the signal :math:`x`.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            1-D vector with filter's input.
+
+        Returns
+        ----------
+        y : np.ndarray
+            Filter's output.
+            
+        """
+        if self.method == 'impulse':
+            y = np.zeros(x.shape)
+            for num, den in zip(self.tfz_sos[0], self.tfz_sos[1]):
+                y += futils.sos_filter_rt((num, den), x)
+            
+        return y
+    
 ##    def filterz(self, x):
 ##        """Filters the signal :math:`x`.
 ##
