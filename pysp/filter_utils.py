@@ -262,6 +262,7 @@ def bilinear_transform(num, den, T):
     denz = np.array(den_z, np.float64)
 
     return numz, denz
+
             
 def sos_filter(sos, x):
     """Filters a signal considering a single SOS section

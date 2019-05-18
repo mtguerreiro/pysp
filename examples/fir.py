@@ -50,9 +50,9 @@ for k in range(Nf):
     y[:, k] = butter.filter(x[:, k])
 
 ### --- Plots ---
-matplotlib.rc('font', **{'family': 'serif'})
-matplotlib.rc('text', usetex=True)
-matplotlib.rcParams.update({'font.size': 12})
+##matplotlib.rc('font', **{'family': 'serif'})
+##matplotlib.rc('text', usetex=True)
+##matplotlib.rcParams.update({'font.size': 12})
 
 plt.ion()
 
@@ -116,7 +116,7 @@ plt.ylim([-0.11, 0.11])
 #plt.setp(ax.get_yticklabels(), visible=False)
 plt.grid()
 
-plt.savefig('fir-mag.pdf', bbox_inches='tight')
+#plt.savefig('fir-mag.pdf', bbox_inches='tight')
 
 ##plt.figure(figsize=(8, 5))
 ##plt.semilogx(w[idx]/2/np.pi, Hz_phase[idx], label='$H(z)$')
