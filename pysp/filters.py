@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.signal
 import pysp.filter_utils as futils
+import pysp.butter as spbutter
 import sympy
 
 
@@ -105,10 +106,9 @@ class butter:
             # Sampling time for discrete stuff
             self.T = T
 
-            # Corner frequency
-            _wc = self.__corner(wp, Hwp, ws, Hws)
-            # Order
-            _N = self.__order(_wc, wp, Hwp)
+            # Corner frequency and order
+            _wc = spbutter.corner(wp, Hwp, ws, Hws)
+            _N = spbutter.order(_wc, wp, Hwp)
 
             print(_N, _wc)
             
@@ -122,19 +122,24 @@ class butter:
             self.wc = wc
             self.fc = wc/2/np.pi
 
-            sk = self.__poles()
+            # Poles
+            sk = spbutter.poles(N, wc)
             sk = sk[sk.real < 0]
             self.poles = sk
 
+            # Continuous-time transfer function
             tf = [0., 0.]
-            tf[0], tf[1] = self.__tf()
+            tf[0], tf[1] = futils.tf_from_poles(sk)
             self.tf = tf
-            self.tf_sos = self.__sos()
+            self.tf_sos = futils.tf_to_parallel_sos(tf[0], tf[1])
 
+            # Discrete-time transfer function
             tfz = [0., 0.]
-            tfz[0], tfz[1] = self.__tfz()
+            sosz = [0., 0.]
+            sosz = futils.tf_to_parallel_sos_z(tf[0], tf[1], T)
+            tfz = futils.parallel_sos_to_tf(sosz[0], sosz[1])
             self.tfz = tfz
-            self.tfz_sos = self.__sosz()
+            self.tfz_sos = sosz
 
             
     def __bilinear(self, wp, Hwp, ws, Hws, cutoff='wp', T=1):
@@ -411,8 +416,10 @@ class butter:
             Array with numerator coefficients.
             
         """
-        sosz = futils.tf_to_sos_z(self.tf[0], self.tf[1], self.T)        
-        return futils.sos_to_tf(sosz[0], sosz[1])
+        #sosz = futils.tf_to_sos_z(self.tf[0], self.tf[1], self.T)
+        sosz = futils.tf_to_parallel_sos_z(self.tf[0], self.tf[1], self.T)  
+
+        return futils.parallel_sos_to_tf(sosz[0], sosz[1])
     
 
     def __sos(self):
@@ -445,7 +452,7 @@ class butter:
         """
         T = T if T is not None else self.T
 
-        return futils.tf_to_sos_z(self.tf[0], self.tf[1], T)
+        return futils.tf_to_parallel_sos_z(self.tf[0], self.tf[1], T)
 
 
     def bode(self, w):

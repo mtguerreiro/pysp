@@ -2,21 +2,49 @@ import numpy as np
 import scipy.signal
 
 
-def tf_to_sos(num, den):
-    """Builds a 2nd order model for a Butterworth filter with the given poles.
+def tf_from_poles(poles):
+    """Computes the numerator and denominator of the filter's transfer
+    function based on its poles.
 
     Parameters
     ----------
     poles : np.ndarray
-        Array with filter poles.
+        Array with poles. 
+    Returns
+    -------
+    num : np.ndarray
+        Array with numerator coefficients.
+
+    den : np.ndarray
+        Array with denominator coefficients.
+
+    """
+    den = np.poly(poles).real
+    num = np.array([den[-1]])
+
+    return num, den    
+
+    
+def tf_to_parallel_sos(num, den):
+    """Expands a transfer function as a sum of second-order polynomials.
+
+    Parameters
+    ----------
+    num : np.ndarray
+        Transfer function numerator coefficients.
+
+    den : np.ndarray
+        Transfer function denominator coefficients.
 
     Returns
     -------
-    num, den : np.ndarray
-        The numerator and denominator for the filter's transfer function as a
-        sum of second order terms.
-    """
+    num : np.ndarray
+        Array with numerator coefficients for each 2nd order term.
 
+    den : np.ndarray
+        Array with denonimator coefficients for each 2nd order term.
+
+    """
     Ak, pk, k = scipy.signal.residue(num, den)
     pk_sort = np.argsort(pk)
     Ak = Ak[pk_sort]
@@ -50,23 +78,28 @@ def tf_to_sos(num, den):
     return np.array(num_list), np.array(den_list)  
 
 
-def tf_to_sos_z(num, den, T):
-    """Builds a 2nd order discrete model for a Butterworth filter with
-    the given poles and sampling period.
+def tf_to_parallel_sos_z(num, den, T):
+    """Builds a discrete-model as a sum of second-order polynomials from a
+    continuous-time model.
 
     Parameters
     ----------
-    poles : np.ndarray
-        Array with filter poles.
+    num : np.ndarray
+        Numerator coefficients of the continuous-time model.
+
+    den : np.ndarray
+        Denominator coefficients of the continuous-time model.
         
     T : int, float
         Sampling period
 
     Returns
     -------
-    num, den : np.ndarray
-        The numerator and denominator for the filter's transfer function as a
-        sum of second order terms.
+    num : np.ndarray
+        Array with numerator coefficients for each 2nd order term.
+
+    den : np.ndarray
+        Array with denonimator coefficients for each 2nd order term.
         
     """    
     Ak, pk, k = scipy.signal.residue(num, den)
@@ -103,7 +136,7 @@ def tf_to_sos_z(num, den, T):
     return np.array(num_list), np.array(den_list)
 
 
-def sos_to_tf(num, den):
+def parallel_sos_to_tf(num, den):
     """Builds a transfer function from the SOS representation.
 
     Parameters
