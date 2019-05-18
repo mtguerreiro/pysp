@@ -23,7 +23,7 @@ fnyq = fs/2
 # Bode 
 wstart = 0.05*wp/(2/np.pi)
 wstop = 2*np.pi*fnyq
-dw = 0.01
+dw = 1
 
 # Frequencies to simulate
 freqs = [100, 1000, 4000]

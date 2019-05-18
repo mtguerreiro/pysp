@@ -79,189 +79,134 @@ class butter:
 
 
     def __impulse(self, wp, Hwp, ws, Hws, cutoff='wp', T=1):
-            """Designs a Butterworth low-pass with the impulse method.
+        """Designs a Butterworth low-pass with the impulse method.
 
-            Parameters
-            ----------
-            wp : int, float
-                Pass-band frequency :math:`\omega_p`.
-                
-            Hwp : int, float
-                Magnitude of :math:`H(j\omega)` desided at the pass-band frequency
-                :math:`\omega_p`.
-
-            ws : int, float
-                Stop-band frequency :math:`\omega_s`.
-
-            Hws : int, float
-                Magnitude of :math:`H(j\omega)` desided at the stop-band frequency
-                :math:`\omega_p`.
-
-            T : int, float
-                Sampling time to design the discrete filter.
-                
-            """
-            self._A = lambda H_w : 1/H_w**2 - 1
-
-            # Sampling time for discrete stuff
-            self.T = T
-
-            # Corner frequency and order
-            _wc = spbutter.corner(wp, Hwp, ws, Hws)
-            _N = spbutter.order(_wc, wp, Hwp)
-
-            print(_N, _wc)
+        Parameters
+        ----------
+        wp : int, float
+            Pass-band frequency :math:`\omega_p`.
             
-            # Actual order, cut-off
-            N = np.ceil(_N).astype(int)
-            if cutoff == 'wp':
-                wc = wp/(self._A(Hwp)**(1/2/N))
-            else:
-                wc = ws/(self._A(Hws)**(1/2/N))
-            self.order = N
-            self.wc = wc
-            self.fc = wc/2/np.pi
+        Hwp : int, float
+            Magnitude of :math:`H(j\omega)` desided at the pass-band frequency
+            :math:`\omega_p`.
 
-            # Poles
-            sk = spbutter.poles(N, wc)
-            sk = sk[sk.real < 0]
-            self.poles = sk
+        ws : int, float
+            Stop-band frequency :math:`\omega_s`.
 
-            # Continuous-time transfer function
-            tf = [0., 0.]
-            tf[0], tf[1] = futils.tf_from_poles(sk)
-            self.tf = tf
-            self.tf_sos = futils.tf_to_parallel_sos(tf[0], tf[1])
+        Hws : int, float
+            Magnitude of :math:`H(j\omega)` desided at the stop-band frequency
+            :math:`\omega_p`.
 
-            # Discrete-time transfer function
-            tfz = [0., 0.]
-            sosz = [0., 0.]
-            sosz = futils.tf_to_parallel_sos_z(tf[0], tf[1], T)
-            tfz = futils.parallel_sos_to_tf(sosz[0], sosz[1])
-            self.tfz = tfz
-            self.tfz_sos = sosz
+        T : int, float
+            Sampling time to design the discrete filter.
+            
+        """
+        self._A = lambda H_w : 1/H_w**2 - 1
+
+        # Sampling time for discrete stuff
+        self.T = T
+
+        # Corner frequency and order
+        _wc = spbutter.corner(wp, Hwp, ws, Hws)
+        _N = spbutter.order(_wc, wp, Hwp)
+
+        print(_N, _wc)
+        
+        # Actual order, cut-off
+        N = np.ceil(_N).astype(int)
+        if cutoff == 'wp':
+            wc = wp/(self._A(Hwp)**(1/2/N))
+        else:
+            wc = ws/(self._A(Hws)**(1/2/N))
+        self.order = N
+        self.wc = wc
+        self.fc = wc/2/np.pi
+
+        # Poles
+        sk = spbutter.poles(N, wc)
+        sk = sk[sk.real < 0]
+        self.poles = sk
+
+        # Continuous-time transfer function
+        tf = [0., 0.]
+        tf[0], tf[1] = futils.tf_from_poles(sk)
+        self.tf = tf
+        self.tf_sos = futils.tf_to_parallel_sos(tf[0], tf[1])
+
+        # Discrete-time transfer function
+        tfz = [0., 0.]
+        sosz = [0., 0.]
+        sosz = futils.tf_to_parallel_sos_z(tf[0], tf[1], T)
+        tfz = futils.parallel_sos_to_tf(sosz[0], sosz[1])
+        self.tfz = tfz
+        self.tfz_sos = sosz
 
             
     def __bilinear(self, wp, Hwp, ws, Hws, cutoff='wp', T=1):
-            """Designs a Butterworth low-pass with the bilinear method.
+        """Designs a Butterworth low-pass with the bilinear method.
 
-            Parameters
-            ----------
-            wp : int, float
-                Pass-band frequency :math:`\omega_p`.
-                
-            Hwp : int, float
-                Magnitude of :math:`H(j\omega)` desided at the pass-band frequency
-                :math:`\omega_p`.
-
-            ws : int, float
-                Stop-band frequency :math:`\omega_s`.
-
-            Hws : int, float
-                Magnitude of :math:`H(j\omega)` desided at the stop-band frequency
-                :math:`\omega_p`.
-
-            T : int, float
-                Sampling time to design the discrete filter.
-                
-            """
-            self._A = lambda H_w : 1/H_w**2 - 1
-
-            # Sampling time for discrete stuff
-            self.T = T
-
-            # Corner frequency
-            wpl = 2/T*np.tan(wp*T/2)
-            wsl = 2/T*np.tan(ws*T/2)
-            _wc = self.__corner(wpl, Hwp, wsl, Hws)
-            # Order
-            _N = self.__order(_wc, wpl, Hwp)
+        Parameters
+        ----------
+        wp : int, float
+            Pass-band frequency :math:`\omega_p`.
             
-            # Actual order, cut-off
-            N = np.ceil(_N).astype(int)
-            if cutoff == 'wp':
-                wc = wpl/(self._A(Hwp)**(1/2/N))
-            else:
-                wc = wsl/(self._A(Hws)**(1/2/N))
-            self.order = N
-            self.wc = wc
-            self.fc = wc/2/np.pi
+        Hwp : int, float
+            Magnitude of :math:`H(j\omega)` desided at the pass-band frequency
+            :math:`\omega_p`.
 
-            sk = self.__poles()
-            sk = sk[sk.real < 0]
-            self.poles = sk
+        ws : int, float
+            Stop-band frequency :math:`\omega_s`.
 
-            tf = [0., 0.]
-            tf[0], tf[1] = self.__tf()
-            self.tf = tf
-            #self.tf_sos = self.__sos()
+        Hws : int, float
+            Magnitude of :math:`H(j\omega)` desided at the stop-band frequency
+            :math:`\omega_p`.
 
-            self.__bilinear_c_to_d()
-
-
-    def __bilinear_c_to_d(self):
-
-            T = self.T
+        T : int, float
+            Sampling time to design the discrete filter.
             
-            s, z = sympy.symbols('s z')
-            s = 2/T*(1 - 1/z)/(1 + 1/z)
+        """
+        self._A = lambda H_w : 1/H_w**2 - 1
 
-            num = self.tf[0]
-            den = self.tf[1]
-            num_poly = sympy.Poly(num[0], s)
-            den_poly = sympy.Poly(den, s)
+        # Sampling time for discrete stuff
+        self.T = T
 
-            gs = num_poly/den_poly
-            num_z, den_z = sympy.fraction(gs.factor())
-            num_z = sympy.Poly(num_z.expand(), z)
-            den_z = sympy.Poly(den_z.expand(), z)
+        # Pre-warping
+        wpl = 2/T*np.tan(wp*T/2)
+        wsl = 2/T*np.tan(ws*T/2)
 
-            num_z = num_z/den_z.coeffs()[0]
-            den_z = den_z/den_z.coeffs()[0]
-            num_z = sympy.Poly(num_z).all_coeffs()
-            den_z = sympy.Poly(den_z).all_coeffs()
+        # Corner frequency and order
+        _wc = spbutter.corner(wpl, Hwp, wsl, Hws)
+        _N = spbutter.order(_wc, wpl, Hwp)
+        
+        # Actual order, cut-off
+        N = np.ceil(_N).astype(int)
+        if cutoff == 'wp':
+            wc = wpl/(self._A(Hwp)**(1/2/N))
+        else:
+            wc = wsl/(self._A(Hws)**(1/2/N))
+        self.order = N
+        self.wc = wc
+        self.fc = wc/2/np.pi
+
+        # Poles
+        sk = spbutter.poles(N, wc)
+        sk = sk[sk.real < 0]
+        self.poles = sk
+
+        # Continuous-time transfer function 
+        tf = [0., 0.]
+        tf[0], tf[1] = futils.tf_from_poles(sk)
+        self.tf = tf
+
+        # Discrete-time transfer function
+        self.tfz = [0., 0.]
+        tfz = futils.bilinear_transform(self.tf[0], self.tf[1], T)
+        self.tfz[0], self.tfz[1] = tfz[0], tfz[1]
             
-            self.tfz = [0., 0.]
-            self.tfz[0] = np.array(num_z, np.float64)
-            self.tfz[1] = np.array(den_z, np.float64)
-
-            self.__bilinear_tfz_to_sos()
-
-
-    def __bilinear_tfz_to_sos(self):
-
-            numz = self.tfz[0]
-            denz = self.tfz[1]
-
-            zk = np.sort(np.roots(numz))
-            pk = np.sort(np.roots(denz))
-
-            den_list = []
-            num_list = []
-            k = 0
-            while k < numz.shape[0] - 1:
-                if np.abs(np.imag(zk[k])) > 1e-10:
-                    numk = np.polymul([1, -zk[k]], [1, -zk[k+1]])
-                    num_list.append(numk.real)
-                    k += 1
-                else:
-                    num_list.append(np.poly(zk[k]).real)
-                k += 1
-            k = 0
-            while k < denz.shape[0] - 1:
-                if np.abs(np.imag(pk[k])) > 1e-10:
-                    denk = np.polymul([1, -pk[k]], [1, -pk[k+1]])
-                    den_list.append(denk.real)
-                    k += 1
-                else:
-                    den_list.append(np.poly(pk[k]).real)
-                k += 1
-
-            self.tfz_sos = [0., 0.]
-            self.tfz_sos[0] = np.array(num_list)
-            self.tfz_sos[0][0] = numz[0]*self.tfz_sos[0][0]
-            self.tfz_sos[1] = np.array(den_list)
-
+        self.tfz_sos = [0., 0.]
+        sosz = futils.tf_to_cascaded_sos(tfz[0], tfz[1])
+        self.tfz_sos[0], self.tfz_sos[1] = sosz[0], sosz[1]
+        
 
     def __fir(self, wp, Hwp, ws, Hws, T):
         
@@ -303,156 +248,156 @@ class butter:
         tfz[1] = np.array([1.])
         self.tfz = tfz
         
-    def __corner(self, wp, Hwp, ws, Hws):
-        r"""Computes the corner frequency necessary for a Butterworth low-pass
-        filter with the given specifications.
-
-        Parameters
-        ----------
-        wp : int, float
-            Pass-band frequency :math:`\omega_p`.
-            
-        Hwp : int, float
-            Magnitude of :math:`H(j\omega)` desided at the pass-band frequency
-            :math:`\omega_p`.
-
-        ws : int, float
-            Stop-band frequency :math:`\omega_s`.
-
-        Hws : int, float
-            Magnitude of :math:`H(j\omega)` desided at the stop-band frequency
-            :math:`\omega_s`.
-
-        Returns
-        -------
-        wc : float
-            Cut-off frequency :math:`\omega_c`.
-            
-        """        
-        log_wc = np.log10(self._A(Hwp))*np.log10(ws) - np.log10(self._A(Hws))*np.log10(wp)
-        log_wc = log_wc/(np.log10(self._A(Hwp)/self._A(Hws)))
-
-        return 10**log_wc
-
-
-    def __order(self, wc, w, Hw):
-        r"""Computer the order necessary for a Butterworth filter with the
-        specified cut-off frequency and desired magnitude :math:`H(j\omega)`
-        at frequency :math:`\omega`.
-
-        Parameters
-        ----------
-        wc : int, float
-            Cut-off frequency :math:`\omega_c`.
-
-        w : int, float
-            Frequency :math:`\omega` of the specified desired magnitude.
-            
-        Hwp : int, float
-            Magnitude of :math:`H(j\omega)` desired at the specified frequency
-            :math:`\omega`.
-
-        Returns
-        -------
-        N : float
-            Exact order necessary.
-            
-        """
-        return np.log10(self._A(Hw))/(2*np.log10(w/wc))
-
-
-    def __poles(self):
-        """Computes the poles of a Butterworth filter with the specified
-        cut-off frequency :math:`\omega_c` and order :math:`N`. 
-
-        Parameters
-        ----------
-        wc : int, float
-            Cut-off frequency :math:`\omega_c`.
-
-        N : int, float
-            Filter order :math:`N`.
-
-        Returns
-        -------
-        sk : np.ndarray
-            Array with poles.
-            
-        """
-        N = self.order
-        k = np.arange(2*N)
-        return self.wc*np.exp((1j*np.pi/2/N)*(2*k + N - 1))
-
-
-    def __tf(self):
-        """Computes the numerator and denominator of the filter's transfer
-        function based on its poles.
-
-        Returns
-        -------
-        num : np.ndarray
-            Array with numerator coefficients.
-
-        den : np.ndarray
-            Array with denominator coefficients.
-
-        """
-        den = np.poly(self.poles).real
-        num = np.array([den[-1]])
-
-        return num, den
-
-
-    def __tfz(self):
-        """Computes the numerator and denominator of the filter's discrete
-        transfer function, based on the continuos-time transfer function.
-
-        Returns
-        -------
-        num : np.ndarray
-            Array with denominator coefficients.
-
-        den : np.ndarray
-            Array with numerator coefficients.
-            
-        """
-        #sosz = futils.tf_to_sos_z(self.tf[0], self.tf[1], self.T)
-        sosz = futils.tf_to_parallel_sos_z(self.tf[0], self.tf[1], self.T)  
-
-        return futils.parallel_sos_to_tf(sosz[0], sosz[1])
-    
-
-    def __sos(self):
-        """Gets SOS representation from the filter's transfer function.
-
-        Returns
-        -------
-        num : np.ndarray
-            Array with denominator coefficients for each section.
-
-        den : np.ndarray
-            Array with numerator coefficients for each section.
-            
-        """
-        return futils.tf_to_sos(self.tf[0], self.tf[1])
-
-
-    def __sosz(self, T=None):
-        """Gets SOS representation from the filter's discrete transfer
-        function.
-
-        Returns
-        -------
-        num : np.ndarray
-            Array with denominator coefficients for each section.
-
-        den : np.ndarray
-            Array with numerator coefficients for each section.
-            
-        """
-        T = T if T is not None else self.T
-
-        return futils.tf_to_parallel_sos_z(self.tf[0], self.tf[1], T)
+##    def __corner(self, wp, Hwp, ws, Hws):
+##        r"""Computes the corner frequency necessary for a Butterworth low-pass
+##        filter with the given specifications.
+##
+##        Parameters
+##        ----------
+##        wp : int, float
+##            Pass-band frequency :math:`\omega_p`.
+##            
+##        Hwp : int, float
+##            Magnitude of :math:`H(j\omega)` desided at the pass-band frequency
+##            :math:`\omega_p`.
+##
+##        ws : int, float
+##            Stop-band frequency :math:`\omega_s`.
+##
+##        Hws : int, float
+##            Magnitude of :math:`H(j\omega)` desided at the stop-band frequency
+##            :math:`\omega_s`.
+##
+##        Returns
+##        -------
+##        wc : float
+##            Cut-off frequency :math:`\omega_c`.
+##            
+##        """        
+##        log_wc = np.log10(self._A(Hwp))*np.log10(ws) - np.log10(self._A(Hws))*np.log10(wp)
+##        log_wc = log_wc/(np.log10(self._A(Hwp)/self._A(Hws)))
+##
+##        return 10**log_wc
+##
+##
+##    def __order(self, wc, w, Hw):
+##        r"""Computer the order necessary for a Butterworth filter with the
+##        specified cut-off frequency and desired magnitude :math:`H(j\omega)`
+##        at frequency :math:`\omega`.
+##
+##        Parameters
+##        ----------
+##        wc : int, float
+##            Cut-off frequency :math:`\omega_c`.
+##
+##        w : int, float
+##            Frequency :math:`\omega` of the specified desired magnitude.
+##            
+##        Hwp : int, float
+##            Magnitude of :math:`H(j\omega)` desired at the specified frequency
+##            :math:`\omega`.
+##
+##        Returns
+##        -------
+##        N : float
+##            Exact order necessary.
+##            
+##        """
+##        return np.log10(self._A(Hw))/(2*np.log10(w/wc))
+##
+##
+##    def __poles(self):
+##        """Computes the poles of a Butterworth filter with the specified
+##        cut-off frequency :math:`\omega_c` and order :math:`N`. 
+##
+##        Parameters
+##        ----------
+##        wc : int, float
+##            Cut-off frequency :math:`\omega_c`.
+##
+##        N : int, float
+##            Filter order :math:`N`.
+##
+##        Returns
+##        -------
+##        sk : np.ndarray
+##            Array with poles.
+##            
+##        """
+##        N = self.order
+##        k = np.arange(2*N)
+##        return self.wc*np.exp((1j*np.pi/2/N)*(2*k + N - 1))
+##
+##
+##    def __tf(self):
+##        """Computes the numerator and denominator of the filter's transfer
+##        function based on its poles.
+##
+##        Returns
+##        -------
+##        num : np.ndarray
+##            Array with numerator coefficients.
+##
+##        den : np.ndarray
+##            Array with denominator coefficients.
+##
+##        """
+##        den = np.poly(self.poles).real
+##        num = np.array([den[-1]])
+##
+##        return num, den
+##
+##
+##    def __tfz(self):
+##        """Computes the numerator and denominator of the filter's discrete
+##        transfer function, based on the continuos-time transfer function.
+##
+##        Returns
+##        -------
+##        num : np.ndarray
+##            Array with denominator coefficients.
+##
+##        den : np.ndarray
+##            Array with numerator coefficients.
+##            
+##        """
+##        #sosz = futils.tf_to_sos_z(self.tf[0], self.tf[1], self.T)
+##        sosz = futils.tf_to_parallel_sos_z(self.tf[0], self.tf[1], self.T)  
+##
+##        return futils.parallel_sos_to_tf(sosz[0], sosz[1])
+##    
+##
+##    def __sos(self):
+##        """Gets SOS representation from the filter's transfer function.
+##
+##        Returns
+##        -------
+##        num : np.ndarray
+##            Array with denominator coefficients for each section.
+##
+##        den : np.ndarray
+##            Array with numerator coefficients for each section.
+##            
+##        """
+##        return futils.tf_to_sos(self.tf[0], self.tf[1])
+##
+##
+##    def __sosz(self, T=None):
+##        """Gets SOS representation from the filter's discrete transfer
+##        function.
+##
+##        Returns
+##        -------
+##        num : np.ndarray
+##            Array with denominator coefficients for each section.
+##
+##        den : np.ndarray
+##            Array with numerator coefficients for each section.
+##            
+##        """
+##        T = T if T is not None else self.T
+##
+##        return futils.tf_to_parallel_sos_z(self.tf[0], self.tf[1], T)
 
 
     def bode(self, w):

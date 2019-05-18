@@ -23,7 +23,7 @@ fnyq = fs/2
 # Bode 
 wstart = 0.05*wp/(2/np.pi)
 wstop = 2*np.pi*fnyq
-dw = 0.1
+dw = 1
 
 # Frequencies to simulate
 freqs = [100, 1000, 4000]
@@ -49,9 +49,9 @@ for k in range(Nf):
     y[:, k] = butter.filter(x[:, k])
 
 # --- Plots ---
-matplotlib.rc('font', **{'family': 'serif'})
-matplotlib.rc('text', usetex=True)
-matplotlib.rcParams.update({'font.size': 12})
+##matplotlib.rc('font', **{'family': 'serif'})
+##matplotlib.rc('text', usetex=True)
+##matplotlib.rcParams.update({'font.size': 12})
 
 plt.ion()
 
@@ -78,7 +78,7 @@ for k in range(Nf):
     plt.ylabel('Amplitude')
     plt.title('$f = ' + str(freqs[k]) + '$ Hz')
 plt.tight_layout()
-plt.savefig('bilinear-mag.pdf', bbox_inches='tight')
+#plt.savefig('bilinear-mag.pdf', bbox_inches='tight')
 
 plt.figure(figsize=(8, 5))
 plt.semilogx(w[idx]/2/np.pi, Hz_phase[idx], label='$H(z)$')
@@ -88,5 +88,5 @@ plt.xlabel('Frequency (Hz)')
 plt.ylabel(r'Phase ($^\circ$)')
 plt.tight_layout()
 plt.legend()
-plt.savefig('bilinear-phase.pdf', bbox_inches='tight')
+#plt.savefig('bilinear-phase.pdf', bbox_inches='tight')
 

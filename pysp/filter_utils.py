@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.signal
+import sympy
 
 
 def tf_from_poles(poles):
@@ -78,6 +79,57 @@ def tf_to_parallel_sos(num, den):
     return np.array(num_list), np.array(den_list)  
 
 
+def tf_to_cascaded_sos(num, den):
+    """Factors a transfer function as a product of second-order polynomials.
+
+    Parameters
+    ----------
+    num : np.ndarray
+        Transfer function numerator coefficients.
+
+    den : np.ndarray
+        Transfer function denominator coefficients.
+
+    Returns
+    -------
+    num : np.ndarray
+        Array with numerator coefficients for each 2nd order term.
+
+    den : np.ndarray
+        Array with denonimator coefficients for each 2nd order term.
+
+    """
+    zk = np.sort(np.roots(num))
+    pk = np.sort(np.roots(den))
+
+    den_list = []
+    num_list = []
+    k = 0
+    while k < num.shape[0] - 1:
+        if np.abs(np.imag(zk[k])) > 1e-10:
+            numk = np.polymul([1, -zk[k]], [1, -zk[k+1]])
+            num_list.append(numk.real)
+            k += 1
+        else:
+            num_list.append(np.poly(zk[k]).real)
+        k += 1
+    k = 0
+    while k < den.shape[0] - 1:
+        if np.abs(np.imag(pk[k])) > 1e-10:
+            denk = np.polymul([1, -pk[k]], [1, -pk[k+1]])
+            den_list.append(denk.real)
+            k += 1
+        else:
+            den_list.append(np.poly(pk[k]).real)
+        k += 1
+
+    numr = np.array(num_list)
+    numr[0] = num[0]*numr[0]
+    denr = np.array(den_list)
+    
+    return numr, denr
+            
+    
 def tf_to_parallel_sos_z(num, den, T):
     """Builds a discrete-model as a sum of second-order polynomials from a
     continuous-time model.
@@ -91,7 +143,7 @@ def tf_to_parallel_sos_z(num, den, T):
         Denominator coefficients of the continuous-time model.
         
     T : int, float
-        Sampling period
+        Sampling period.
 
     Returns
     -------
@@ -166,6 +218,51 @@ def parallel_sos_to_tf(num, den):
     return _num, _den
 
 
+def bilinear_transform(num, den, T):
+    """Converts a continuous-time model to a discrete-time model through the
+    bilinear transformation.
+
+    Parameters
+    ----------
+    num : np.ndarray
+        Numerator coefficients of the continuous-time model.
+
+    den : np.ndarray
+        Denominator coefficients of the continuous-time model.
+        
+    T : int, float
+        Sampling period.
+
+    Returns
+    -------
+    num : np.ndarray
+        Numerator coefficients of the discrete-time model.
+
+    den : np.ndarray
+        Denominator coefficients of the discrete-time model.
+    
+    """
+    s, z = sympy.symbols('s z')
+    s = 2/T*(1 - 1/z)/(1 + 1/z)
+
+    num_poly = sympy.Poly(num[0], s)
+    den_poly = sympy.Poly(den, s)
+
+    gs = num_poly/den_poly
+    num_z, den_z = sympy.fraction(gs.factor())
+    num_z = sympy.Poly(num_z.expand(), z)
+    den_z = sympy.Poly(den_z.expand(), z)
+
+    num_z = num_z/den_z.coeffs()[0]
+    den_z = den_z/den_z.coeffs()[0]
+    num_z = sympy.Poly(num_z).all_coeffs()
+    den_z = sympy.Poly(den_z).all_coeffs()
+
+    numz = np.array(num_z, np.float64)
+    denz = np.array(den_z, np.float64)
+
+    return numz, denz
+            
 def sos_filter(sos, x):
     """Filters a signal considering a single SOS section
 
