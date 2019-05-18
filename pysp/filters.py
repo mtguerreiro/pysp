@@ -139,7 +139,7 @@ class butter:
 
         # Corner frequency and order
         _wc = spbutter.corner(wp, Hwp, ws, Hws)
-        _N = spbutter.order(_wc, wp, Hwp)
+        _N = spbutter.order(_wc, ws, Hws)
 
         print(_N, _wc)
         
