@@ -245,7 +245,7 @@ def bilinear_transform(num, den, T):
     s, z = sympy.symbols('s z')
     s = 2/T*(1 - 1/z)/(1 + 1/z)
 
-    num_poly = sympy.Poly(num[0], s)
+    num_poly = sympy.Poly(num, s)
     den_poly = sympy.Poly(den, s)
 
     gs = num_poly/den_poly
