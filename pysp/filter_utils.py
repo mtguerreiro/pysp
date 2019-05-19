@@ -180,8 +180,16 @@ def tf_to_parallel_sos_z(num, den, T):
             # Skips next pole since we took one and its conjugate
             k+=1
         else:
-            den_list.append(np.poly(1/np.exp(T*-pk[k])).real)
-            num_list.append(np.poly(T*Ak[k]).real)
+            #den_list.append(np.poly(1/np.exp(T*-pk[k])).real)
+            #num_list.append(np.poly(T*Ak[k]).real)
+            den_1 = np.poly(1/np.exp(T*-pk[k]))
+            den_2 = np.poly(1/np.exp(T*-pk[k+1]))
+            den = np.polymul(den_1, den_2)
+            num = T*Ak[k]*den_2 + T*Ak[k+1]*den_1
+
+            den_list.append(den.real)
+            num_list.append(num.real)
+            k+=1
             
         k+=1
 
