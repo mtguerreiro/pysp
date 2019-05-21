@@ -120,3 +120,45 @@ def fft(x):
         X[bet] = a[1]
 
     return X
+
+    
+def fft_recursive(x):
+    r"""Computes the DFT of a sequence using the FFT algorithm.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Input sequence.
+
+    Returns
+    -------
+    np.ndarray:
+        Fourier coefficients of the input signal.
+        
+    """
+    def _fft(_x):
+        
+        _X = np.zeros(_x.shape, complex)
+        _N = _x.shape[0]
+        _N_2 = int(_N/2)
+
+        if _N != 2:
+            _Xe = _fft(_x[::2])
+            _Xo = _fft(_x[1::2])
+
+            _Wn = np.exp(-1j * 2 * np.pi / _N)
+            _w = _Wn ** np.arange(_N / 2)
+
+            _X[:_N_2], _X[_N_2:] = sputils.butterfly(_Xe, _Xo, _w)
+        else:
+            __X = dft_naive(_x)
+            _Xe = __X[0]
+            _Xo = __X[1]
+            _X[:_N_2], _X[_N_2:] = _Xe, _Xo
+
+        return _X
+
+    
+    X = _fft(x)
+
+    return X 
