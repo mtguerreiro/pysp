@@ -16,18 +16,25 @@ def samples_bit_reversal(x):
     return x >> (32 - n)
 
 
-def samples_bit_reversal_old(N):
-
-    if type(N) is not int:
-        raise TypeError('``N`` must be an integer')
-
-    n = np.log10(N)/np.log10(2)
-    fmt = '0' + str(int(n) + 2) + 'b'
-    
-    return [int(format(xi, fmt)[:1:-1], 2) for xi in np.arange(N)]
-
-
 def butterfly_idx(nb, mb):
+
+    i = np.zeros(nb*mb, int)
+    j = np.zeros(nb*mb, int)
+
+    seq = np.arange(nb)
+    
+    for k in range(mb):
+        ii = nb*k
+        jj = nb*(k + 1)
+        c = 2*ii
+        sqc = seq + c
+        i[ii:jj] = sqc
+        j[ii:jj] = sqc + nb
+
+    return i, j
+
+
+def butterfly_idx_fast(nb, mb):
 
     alp = [np.arange(nb) + 2*nb*k for k in range(int(mb))]
     bet = [np.arange(nb) + 2*nb*k + nb for k in range(int(mb))]

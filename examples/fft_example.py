@@ -12,7 +12,7 @@ fs = 10e3
 
 # Number of points
 #N = 3*int(fs/f)
-N = 2**12
+N = 2**3
 
 # --- Signal ---
 t = (1/fs)*np.arange(N)
@@ -25,8 +25,9 @@ fx = (fs/N)*np.arange(Nx)
 
 _ti = time.time()
 #X = np.fft.fft(x)
-#X = pysp.ft.fft(x)
-X = pysp.ft.fft_recursive(x)
+X = pysp.ft.fft(x)
+#X = pysp.ft.fft2(x)
+#X = pysp.ft.fft_recursive(x)
 _tf = time.time()
 
 Xm = np.abs(X[:Nx])

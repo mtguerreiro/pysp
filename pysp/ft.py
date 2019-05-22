@@ -108,7 +108,49 @@ def fft(x):
         # Number of blocks
         mb = int(N/2**(m+1))
 
-        alp, bet = sputils.butterfly_idx(nb, mb)
+        # Butterfly coefficients
+        i, j = sputils.butterfly_idx(nb, mb)
+
+        _k = 2**(n - m - 1)*np.arange(N)
+        Wnk = np.exp(-1j*2*np.pi*_k/N)
+
+        X[i], X[j] = sputils.butterfly(X[i], X[j], Wnk[i])
+
+    return X
+
+
+def fft2(x):
+    r"""Computes the DFT of a sequence using the FFT algorithm.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Input sequence.
+
+    Returns
+    -------
+    np.ndarray:
+        Fourier coefficients of the input signal.
+        
+    """
+    # Signal length and number of stages
+    N = int(x.shape[0])
+    n = int(np.log10(N)/np.log10(2))
+
+    # FFT indexes
+    idx = sputils.samples_bit_reversal(np.arange(N))
+    
+    # Rearanges samples
+    X = np.zeros(x.shape, complex)
+    X[:] = x[idx]
+
+    for m in range(n):
+        # Number of elements in each block
+        nb = 2**m
+        # Number of blocks
+        mb = int(N/2**(m+1))
+
+        alp, bet = sputils.butterfly_idx_fast(nb, mb)
         alp = np.array(alp).flatten()
         bet = np.array(bet).flatten()
 
@@ -121,7 +163,7 @@ def fft(x):
 
     return X
 
-    
+
 def fft_recursive(x):
     r"""Computes the DFT of a sequence using the FFT algorithm.
 
@@ -152,9 +194,7 @@ def fft_recursive(x):
             _X[:_N_2], _X[_N_2:] = sputils.butterfly(_Xe, _Xo, _w)
         else:
             __X = dft_naive(_x)
-            _Xe = __X[0]
-            _Xo = __X[1]
-            _X[:_N_2], _X[_N_2:] = _Xe, _Xo
+            _X[0], _X[1] = __X[0], __X[1]
 
         return _X
 
