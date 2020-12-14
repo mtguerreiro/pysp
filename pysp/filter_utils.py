@@ -272,7 +272,7 @@ def bilinear_transform(num, den, T):
     return numz, denz
 
             
-def sos_filter(sos, x):
+def sos_filter(sos, x, x_init=None, y_init=None):
     """Filters a signal considering a single SOS section
 
     Parameters
@@ -300,12 +300,17 @@ def sos_filter(sos, x):
         n = den.shape[0]
         den = np.hstack((den, np.zeros(3 - n)))
 
+    if x_init is None:
+        x_init = np.zeros(2)
+    if y_init is None:
+        y_init = np.zeros(2)
+
     den = den[::-1]
     num = num[::-1]
 
     y = np.zeros(x.shape)
-    y[0] = num[0]*x[0]
-    y[1] = -den[1]*y[0] + num[-1]*x[1] + num[-2]*x[0]
+    y[0] = -den[1]*y_init[0] - den[0]*y_init[1] + num[2]*x[0] + num[1]*x_init[0] + num[0]*x_init[1]
+    y[1] = -den[1]*y[0] -den[0]*y_init[0] + num[2]*x[1] + num[1]*x[0] + num[0]*x_init[0]
 
     for n in range(2, N):
         y[n] = y[(n - 2):n] @ -den[:-1] + x[(n - 2):(n + 1)] @ num
