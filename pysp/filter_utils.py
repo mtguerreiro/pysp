@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.signal
 import sympy
+import numba
 
 
 def tf_from_poles(poles):
@@ -312,10 +313,18 @@ def sos_filter(sos, x, x_init=None, y_init=None):
     y[0] = -den[1]*y_init[0] - den[0]*y_init[1] + num[2]*x[0] + num[1]*x_init[0] + num[0]*x_init[1]
     y[1] = -den[1]*y[0] -den[0]*y_init[0] + num[2]*x[1] + num[1]*x[0] + num[0]*x_init[0]
 
-    for n in range(2, N):
-        y[n] = y[(n - 2):n] @ -den[:-1] + x[(n - 2):(n + 1)] @ num
+    sos_filter_numba(num, den, x, y, N)
+    #for n in range(2, N):
+    #    y[n] = y[(n - 2):n] @ -den[:-1] + x[(n - 2):(n + 1)] @ num
 
     return y
+
+
+@numba.njit()
+def sos_filter_numba(num, den, x, y, N):
+    for n in range(2, N):
+        #y[n] = y[(n - 2):n] @ -den[:-1] + x[(n - 2):(n + 1)] @ num
+        y[n] = -den[1]*y[n-1] - den[0]*y[n-2] + num[2]*x[n] + num[1]*x[n-1] + num[0]*x[n-2]
 
 
 def sos_filter_rt(sos, x):
