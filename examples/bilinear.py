@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import pysp
-#import scipy.signal
 
 # --- Input ---
 # Pass band
@@ -13,7 +12,7 @@ Hwp_dB = 20*np.log10(Hwp)
 # Stop band
 ws = 0.4*np.pi*10000
 Hws = 0.17783
-Hwp_dB = 20*np.log10(Hwp)
+Hws_dB = 20*np.log10(Hws)
 
 # Freq
 T = 1/10000

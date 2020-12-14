@@ -323,7 +323,6 @@ def sos_filter(sos, x, x_init=None, y_init=None):
 @numba.njit()
 def sos_filter_numba(num, den, x, y, N):
     for n in range(2, N):
-        #y[n] = y[(n - 2):n] @ -den[:-1] + x[(n - 2):(n + 1)] @ num
         y[n] = -den[1]*y[n-1] - den[0]*y[n-2] + num[2]*x[n] + num[1]*x[n-1] + num[0]*x[n-2]
 
 
