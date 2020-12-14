@@ -111,7 +111,7 @@ def tf_to_cascaded_sos(num, den):
             num_list.append(numk.real)
             k += 1
         else:
-            num_list.append(np.poly(zk[k]).real)
+            num_list.append(np.poly([zk[k]]).real)
         k += 1
     k = 0
     while k < den.shape[0] - 1:
@@ -120,12 +120,12 @@ def tf_to_cascaded_sos(num, den):
             den_list.append(denk.real)
             k += 1
         else:
-            den_list.append(np.poly(pk[k]).real)
+            den_list.append(np.poly([pk[k]]).real)
         k += 1
-
-    numr = np.array(num_list)
+    
+    numr = np.array(num_list, dtype='object')
     numr[0] = num[0]*numr[0]
-    denr = np.array(den_list)
+    denr = np.array(den_list, dtype='object')
     
     return numr, denr
             
